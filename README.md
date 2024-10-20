@@ -53,6 +53,7 @@ You can listen to mouse events per device. In this example it matches my "Pulsef
 // mouse events
 use input_linux_tools::mouse::*;
 use std::{thread, time};
+
 fn main() {
     let mouse = Mouse::new_first_match("Pulsefire", false).unwrap();
 
@@ -97,7 +98,7 @@ fn main() {
 
 ## Gamepads
 
-While `evdev` supports gamepads (joysticks), however support is not yet implemenented. (The built in gamepad support of Bevy is quite good.)
+While `evdev` supports gamepads (joysticks), this library currently provides no abstraction of gamepads. (Bevy already support multiple gamepad devices so there is no urgent need.)
 
 ---
 
@@ -111,6 +112,7 @@ What's lacking:
 What could be done:
 - Kernel level time-stamping. This could be beneficial to precise timing in context of online gaming (and other cases where timing is crucial).
 - Cross platform support. The same api could potentially be shared among Linux, Windows and OSX platforms, providing per device event input cross relevant operating systems.
+- Stateful wrapper, potentially providing a drop in replacement to the corresponding Bevy input systems. Not sure how window focus should be established though.
 
 ---
 
