@@ -1,14 +1,14 @@
 # linux-input-tools
 
-Input from mice and keyboards using `linux-input`, allowing to treat each input device seprately, e.g., your application can use several mice and keyboards for different purposes, e.g., a alocal multi-player game where each player has their own keyboard and mouse, or even using two mice to control one player. The library puts no limitations to usage. Input is captured before the compositor, thus input does not take notice of "window/focus", which is typically what you want when it cames to games or other applictions with "exclusive" behavior.
+Input from mice and keyboards using `linux-input`, allowing to treat each input device separately, e.g., your application can use several mice and keyboards for different purposes, e.g., a local multi-player game where each player has their own keyboard and mouse, or even using two mice to control one player. The library puts no limitations to usage. Input is captured before the compositor, thus input does not take notice of "window/focus", which is typically what you want when it comes to games or other applications with "exclusive" behavior.
 
-The behavior is essentially stateless, thus device state needs to be maintained by your applaction. Future work (might) include a statefull wrapper, similar to [Bevy](https://bevyengine.org/) input systems.
+The behavior is essentially stateless, thus device state needs to be maintained by your application. Future work (might) include a stateful wrapper, similar to [Bevy](https://bevyengine.org/) input systems.
 
 ---
 
 ## Device detection
 
-Devices are assumed to be presented under `dev/input/`. The `by-id` folder provides human readble identification for the connected devices. The library provides a `Device` abstraction, filtering out devices based on reported capabilities. Notice, some devices present themself as both mice, joysticks (gamepads etc.). Some devices like keyboards may present themselves as several keyboards.
+Devices are assumed to be presented under `dev/input/`. The `by-id` folder provides human readable identification for the connected devices. The library provides a `Device` abstraction, filtering out devices based on reported capabilities. Notice, some devices present them self as both mice, joysticks (gamepads) etc. Some devices like keyboards may present themselves as several keyboards.
 
 ```rust
 let devices = Devices::new().unwrap();
