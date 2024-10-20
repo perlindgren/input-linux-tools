@@ -1,5 +1,5 @@
 use crate::{common::*, device::*};
-use input_linux::{EvdevHandle, Event, Key, KeyEvent};
+use input_linux::{EvdevHandle, Event, Key, KeyEvent, RelativeAxis, RelativeEvent};
 
 use std::{collections::HashMap, convert::TryFrom, fs::File, os::fd::FromRawFd, path::PathBuf};
 
@@ -68,14 +68,14 @@ pub struct MouseButtonInput {
 
 pub struct Mouse {
     evdev_handle: EvdevHandle<File>,
-    buttons: HashMap<MouseButton, ButtonState>,
+    _buttons: HashMap<MouseButton, ButtonState>,
 }
 
 #[derive(Debug)]
 pub enum MouseEvent {
     ButtonEvent(MouseButtonInput),
     ScrollEvent,
-    MotionEvent,
+    MotionEvent(MouseMotion),
 }
 
 impl Mouse {
@@ -85,10 +85,10 @@ impl Mouse {
         let fd = nb.as_raw(); // takes over the file
         let nb_file = unsafe { File::from_raw_fd(fd) };
         let evdev_handle = EvdevHandle::new(nb_file);
-        let buttons = HashMap::new();
+        let _buttons = HashMap::new();
         Mouse {
             evdev_handle,
-            buttons,
+            _buttons,
         }
     }
 
@@ -108,7 +108,7 @@ impl Mouse {
     }
 
     pub fn read(&self) -> Option<MouseEvent> {
-        match self.evdev_handle.read_event() {
+        Some(match self.evdev_handle.read_event() {
             Ok(Event::Key(KeyEvent {
                 time: _, // maybe we should have this
                 key,
@@ -116,13 +116,32 @@ impl Mouse {
                 ..
             })) => {
                 let button: MouseButton = key.into();
-
-                Some(MouseEvent::ButtonEvent(MouseButtonInput {
+                MouseEvent::ButtonEvent(MouseButtonInput {
                     button,
                     state: value.is_pressed().into(),
-                }))
+                })
             }
-            _ => None,
-        }
+            Ok(Event::Relative(RelativeEvent {
+                time: _,
+                axis,
+                value,
+                ..
+            })) => match axis {
+                RelativeAxis::X => MouseEvent::MotionEvent(MouseMotion {
+                    delta: Vec2 {
+                        x: value as f32,
+                        y: 0.0,
+                    },
+                }),
+                RelativeAxis::Y => MouseEvent::MotionEvent(MouseMotion {
+                    delta: Vec2 {
+                        x: 0.0,
+                        y: value as f32,
+                    },
+                }),
+                _ => None?,
+            },
+            _ => None?,
+        })
     }
 }
