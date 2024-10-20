@@ -8,5 +8,5 @@ input-linux = "0.7.1"
 nonblock = "0.2.0"
 
 [patch.crates-io]
-#nonblock = { path = "../nonblock-rs" }
+# nonblock = { path = "../nonblock-rs" }
 nonblock = { git = "https://github.com/perlindgren/nonblock-rs" }
