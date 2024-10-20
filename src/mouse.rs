@@ -1,7 +1,7 @@
-use crate::{common::*, device::*};
+use crate::{common::*, device::*, nonblock::open_evdev};
 use input_linux::{EvdevHandle, Event, Key, KeyEvent, RelativeAxis, RelativeEvent};
 
-use std::{collections::HashMap, convert::TryFrom, fs::File, os::fd::FromRawFd, path::PathBuf};
+use std::{collections::HashMap, fs::File, path::PathBuf};
 
 #[derive(Debug)]
 pub enum MouseButton {
@@ -79,28 +79,24 @@ pub enum MouseEvent {
 }
 
 impl Mouse {
-    pub fn new(path: &PathBuf) -> Self {
-        let file = File::open(path).unwrap();
-        let nb = nonblock::NonBlockingReader::from_fd(file).unwrap();
-        let fd = nb.as_raw(); // takes over the file
-        let nb_file = unsafe { File::from_raw_fd(fd) };
-        let evdev_handle = EvdevHandle::new(nb_file);
+    pub fn new(path: &PathBuf, blocking: bool) -> std::io::Result<Self> {
+        let evdev_handle = open_evdev(path, blocking)?;
         let _buttons = HashMap::new();
-        Mouse {
+        Ok(Mouse {
             evdev_handle,
             _buttons,
-        }
+        })
     }
 
-    pub fn new_first_match(s: &str) -> Self {
-        let devices = Devices::new().unwrap();
+    pub fn new_first_match(s: &str, blocking: bool) -> std::io::Result<Self> {
+        let devices = Devices::new()?;
 
         let device_path = devices
             .mice
             .iter()
             .find(|m| m.to_str().unwrap().contains(s))
             .unwrap();
-        Self::new(device_path)
+        Self::new(device_path, blocking)
     }
 
     pub fn read_event(&self) -> std::io::Result<Event> {

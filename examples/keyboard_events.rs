@@ -1,12 +1,13 @@
-// keyboard, linux events
+// keyboard events
 use input_linux_tools::keyboard::*;
 use std::{thread, time};
 
 fn main() {
-    let keyboard = Keyboard::new_first_match("Tenkeyless-event-kbd", false).unwrap();
+    let mut keyboard = Keyboard::new_first_match("Tenkeyless-event-kbd", false).unwrap();
+    keyboard.ignore_autorepeat = true;
 
     loop {
-        if let Ok(e) = keyboard.read_event() {
+        if let Some(e) = keyboard.read() {
             println!("e {:?}", e);
         } else {
             println!("-- sleep --");

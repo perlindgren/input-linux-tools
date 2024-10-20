@@ -1,10 +1,9 @@
-use crate::{common::*, device::*};
-use input_linux::{EvdevHandle, Event, Key, KeyEvent, KeyState, RelativeAxis, RelativeEvent};
-
-use std::{collections::HashMap, convert::TryFrom, fs::File, os::fd::FromRawFd, path::PathBuf};
+use crate::{device::*, nonblock::open_evdev};
+use input_linux::{EvdevHandle, Event, Key, KeyEvent, KeyState};
+use std::{/*collections::HashMap,*/ fs::File, path::PathBuf};
 
 #[derive(Debug)]
-enum KeyStatus {
+pub enum KeyStatus {
     Released,
     Pressed,
     Autorepeat,
@@ -12,8 +11,8 @@ enum KeyStatus {
 
 #[derive(Debug)]
 pub struct KeyboardEvent {
-    key: Key,
-    status: KeyStatus,
+    pub key: Key,
+    pub status: KeyStatus,
 }
 
 pub struct Keyboard {
@@ -23,28 +22,22 @@ pub struct Keyboard {
 }
 
 impl Keyboard {
-    pub fn new(path: &PathBuf) -> Self {
-        let file = File::open(path).unwrap();
-        let nb = nonblock::NonBlockingReader::from_fd(file).unwrap();
-        let fd = nb.as_raw(); // takes over the file
-        let nb_file = unsafe { File::from_raw_fd(fd) };
-        let evdev_handle = EvdevHandle::new(nb_file);
-        // let _buttons = HashMap::new();
-        Keyboard {
+    pub fn new(path: &PathBuf, blocking: bool) -> std::io::Result<Self> {
+        let evdev_handle = open_evdev(path, blocking)?;
+        Ok(Keyboard {
             evdev_handle,
-            ignore_autorepeat: false, // _buttons,
-        }
+            ignore_autorepeat: false,
+        })
     }
 
-    pub fn new_first_match(s: &str) -> Self {
-        let devices = Devices::new().unwrap();
-
+    pub fn new_first_match(s: &str, blocking: bool) -> std::io::Result<Self> {
+        let devices = Devices::new()?;
         let device_path = devices
             .keyboards
             .iter()
             .find(|m| m.to_str().unwrap().contains(s))
             .unwrap();
-        Self::new(device_path)
+        Self::new(device_path, blocking)
     }
 
     pub fn read_event(&self) -> std::io::Result<Event> {
