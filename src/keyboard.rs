@@ -45,29 +45,36 @@ impl Keyboard {
     }
 
     pub fn read(&self) -> Option<KeyboardEvent> {
-        Some(match self.evdev_handle.read_event() {
-            Ok(Event::Key(KeyEvent {
-                time: _, // maybe we should have this
-                key,
-                value,
-                ..
-            })) => KeyboardEvent {
-                key,
-                status: match value {
-                    KeyState::RELEASED => KeyStatus::Released,
-                    KeyState::PRESSED => KeyStatus::Pressed,
-                    KeyState::AUTOREPEAT => {
-                        if self.ignore_autorepeat {
-                            None?
-                        } else {
-                            KeyStatus::Autorepeat
-                        }
-                    }
-                    _ => None?,
-                },
-            },
-
-            _ => None?,
-        })
+        loop {
+            match self.evdev_handle.read_event() {
+                Err(_) => None?, // no more events to read
+                Ok(Event::Key(KeyEvent {
+                    time: _, // maybe we should have this
+                    key,
+                    value,
+                    ..
+                })) => {
+                    return Some(KeyboardEvent {
+                        key,
+                        status: match value {
+                            KeyState::RELEASED => KeyStatus::Released,
+                            KeyState::PRESSED => KeyStatus::Pressed,
+                            KeyState::AUTOREPEAT => {
+                                if self.ignore_autorepeat {
+                                    continue; // skip this event and read next
+                                } else {
+                                    KeyStatus::Autorepeat
+                                }
+                            }
+                            _ => {
+                                log::error!("unexpected value");
+                                continue; // skip this event and read next
+                            }
+                        },
+                    });
+                }
+                _ => {} // skip this event and read next
+            }
+        }
     }
 }

@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 input-linux = "0.7.1"
 libc = "0.2.161"
+log = "0.4.22"

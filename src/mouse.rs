@@ -104,40 +104,47 @@ impl Mouse {
     }
 
     pub fn read(&self) -> Option<MouseEvent> {
-        Some(match self.evdev_handle.read_event() {
-            Ok(Event::Key(KeyEvent {
-                time: _, // maybe we should have this
-                key,
-                value,
-                ..
-            })) => {
-                let button: MouseButton = key.into();
-                MouseEvent::ButtonEvent(MouseButtonInput {
-                    button,
-                    state: value.is_pressed().into(),
-                })
+        loop {
+            match self.evdev_handle.read_event() {
+                Err(_) => None?, // no more events to read
+                Ok(Event::Key(KeyEvent {
+                    time: _, // maybe we should have this
+                    key,
+                    value,
+                    ..
+                })) => {
+                    let button: MouseButton = key.into();
+                    return Some(MouseEvent::ButtonEvent(MouseButtonInput {
+                        button,
+                        state: value.is_pressed().into(),
+                    }));
+                }
+                Ok(Event::Relative(RelativeEvent {
+                    time: _,
+                    axis,
+                    value,
+                    ..
+                })) => match axis {
+                    RelativeAxis::X => {
+                        return Some(MouseEvent::MotionEvent(MouseMotion {
+                            delta: Vec2 {
+                                x: value as f32,
+                                y: 0.0,
+                            },
+                        }));
+                    }
+                    RelativeAxis::Y => {
+                        return Some(MouseEvent::MotionEvent(MouseMotion {
+                            delta: Vec2 {
+                                x: 0.0,
+                                y: value as f32,
+                            },
+                        }));
+                    }
+                    _ => log::error!("unexpeced axis"), // skip this event and read next
+                },
+                _ => {} // skip this event and read next
             }
-            Ok(Event::Relative(RelativeEvent {
-                time: _,
-                axis,
-                value,
-                ..
-            })) => match axis {
-                RelativeAxis::X => MouseEvent::MotionEvent(MouseMotion {
-                    delta: Vec2 {
-                        x: value as f32,
-                        y: 0.0,
-                    },
-                }),
-                RelativeAxis::Y => MouseEvent::MotionEvent(MouseMotion {
-                    delta: Vec2 {
-                        x: 0.0,
-                        y: value as f32,
-                    },
-                }),
-                _ => None?,
-            },
-            _ => None?,
-        })
+        }
     }
 }
