@@ -1,7 +1,21 @@
 //
 use std::{fs, path::PathBuf};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub enum Device {
+    Keyboard(PathBuf),
+    Mouse(PathBuf),
+    GamePad(PathBuf),
+}
+
+#[derive(Debug, Clone)]
+pub enum DeviceType {
+    Keyboard,
+    Mouse,
+    GamePad,
+}
+
+#[derive(Debug, Default)]
 pub struct Devices {
     pub keyboards: Vec<PathBuf>,
     pub mice: Vec<PathBuf>,
