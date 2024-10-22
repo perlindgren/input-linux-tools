@@ -36,7 +36,7 @@ impl From<DeviceType> for Device {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Devices {
     pub keyboards: Vec<PathBuf>,
     pub mice: Vec<PathBuf>,
