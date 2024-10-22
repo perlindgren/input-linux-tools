@@ -7,3 +7,4 @@ edition = "2021"
 input-linux = "0.7.1"
 libc = "0.2.161"
 log = "0.4.22"
+serde = { version = "1.0.211", features = ["derive"] }

@@ -1,7 +1,8 @@
 //
+use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Device {
     Keyboard(PathBuf),
     Mouse(PathBuf),
