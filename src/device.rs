@@ -1,6 +1,7 @@
 //
+use crate::{keyboard::Keyboard, mouse::Mouse};
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf};
+use std::{fmt, fs, path::PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Device {
@@ -9,30 +10,33 @@ pub enum Device {
     GamePad(PathBuf),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DeviceType {
-    Keyboard,
-    Mouse,
-    GamePad,
+    Keyboard(Keyboard, PathBuf),
+    Mouse(Mouse, PathBuf),
+    // GamePad(GamePad), // todo
 }
-
-impl From<Device> for DeviceType {
-    fn from(device: Device) -> Self {
-        match device {
-            Device::Keyboard(_) => DeviceType::Keyboard,
-            Device::Mouse(_) => DeviceType::Mouse,
-            Device::GamePad(_) => DeviceType::GamePad,
+impl DeviceType {
+    pub fn connect(option_device: &Option<Device>) -> Option<Self> {
+        match option_device {
+            Some(Device::Keyboard(p)) => Keyboard::new(p, false)
+                .map_or_else(|_| None, |k| Some(DeviceType::Keyboard(k, p.clone()))),
+            Some(Device::Mouse(p)) => Mouse::new(p, false)
+                .map_or_else(|_| None, |m| Some(DeviceType::Mouse(m, p.clone()))),
+            _ => None?,
         }
     }
 }
 
-impl From<DeviceType> for Device {
-    fn from(device_type: DeviceType) -> Self {
-        match device_type {
-            DeviceType::Keyboard => Device::Keyboard(PathBuf::new()),
-            DeviceType::Mouse => Device::Mouse(PathBuf::new()),
-            DeviceType::GamePad => Device::GamePad(PathBuf::new()),
-        }
+impl fmt::Debug for DeviceType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{:?}",
+            match self {
+                DeviceType::Keyboard(_, p) => ("Keyboard", p),
+                DeviceType::Mouse(_, p) => ("Mouse", p),
+            }
+        )
     }
 }
 
@@ -47,7 +51,7 @@ impl Devices {
     pub fn new() -> std::io::Result<Devices> {
         let mut keyboards = vec![];
         let mut mice = vec![];
-        let mut joystics = vec![];
+        let mut gamepads = vec![];
 
         for entry in fs::read_dir("/dev/input/by-id")? {
             let pathbuf = entry?.path();
@@ -57,14 +61,14 @@ impl Devices {
             } else if last.contains("event-kbd") {
                 keyboards.push(pathbuf);
             } else if last.contains("event-joystic") {
-                joystics.push(pathbuf);
+                gamepads.push(pathbuf);
             }
         }
 
         Ok(Devices {
             keyboards,
             mice,
-            gamepads: joystics,
+            gamepads,
         })
     }
 }
