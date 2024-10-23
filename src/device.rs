@@ -3,44 +3,58 @@ use crate::{keyboard::Keyboard, mouse::Mouse};
 use serde::{Deserialize, Serialize};
 use std::{fmt, fs, path::PathBuf};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Device {
-    Keyboard(PathBuf),
-    Mouse(PathBuf),
-    GamePad(PathBuf),
+#[derive(Serialize, Deserialize, Default)]
+pub struct Device {
+    pub path: PathBuf,
+    pub device_type: DeviceType,
+    #[serde(skip)]
+    pub evdev: Option<EvDev>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum DeviceType {
-    Keyboard(Keyboard, PathBuf),
-    Mouse(Mouse, PathBuf),
-    // GamePad(GamePad), // todo
+    #[default]
+    Keyboard,
+    Mouse,
+    GamePad, // TODO
 }
-impl DeviceType {
-    pub fn connect(option_device: &Option<Device>) -> Option<Self> {
-        match option_device {
-            Some(Device::Keyboard(p)) => Keyboard::new(p, false)
-                .map_or_else(|_| None, |k| Some(DeviceType::Keyboard(k, p.clone()))),
-            Some(Device::Mouse(p)) => Mouse::new(p, false)
-                .map_or_else(|_| None, |m| Some(DeviceType::Mouse(m, p.clone()))),
-            _ => None?,
+
+#[derive()]
+pub enum EvDev {
+    Keyboard(Keyboard),
+    Mouse(Mouse),
+    GamePad, // TODO
+}
+
+impl Device {
+    pub fn connect(&mut self) {
+        self.evdev = match self.device_type {
+            DeviceType::Keyboard => {
+                Keyboard::new(&self.path, false).map_or_else(|_| None, |k| Some(EvDev::Keyboard(k)))
+            }
+            DeviceType::Mouse => {
+                Mouse::new(&self.path, false).map_or_else(|_| None, |m| Some(EvDev::Mouse(m)))
+            }
+            DeviceType::GamePad => todo!(),
         }
     }
 }
 
-impl fmt::Debug for DeviceType {
+impl fmt::Debug for Device {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{:?}",
-            match self {
-                DeviceType::Keyboard(_, p) => ("Keyboard", p),
-                DeviceType::Mouse(_, p) => ("Mouse", p),
-            }
-        )
+        let s = if self.evdev.is_some() {
+            "Device connected"
+        } else {
+            "Device unconnected"
+        };
+        f.debug_struct(s)
+            .field("path", &self.path)
+            .field("device_type", &self.device_type)
+            .finish()
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default)]
 pub struct Devices {
     pub keyboards: Vec<PathBuf>,
     pub mice: Vec<PathBuf>,
@@ -73,13 +87,37 @@ impl Devices {
     }
 }
 
+// notice these are linux only tests, assuming user access to /dev/input
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn test_device() {
         let devices = Devices::new();
+        // We cannot make any meaningful assertion, so its more of compile/run test
+        // Expected byhavir listing available devices, run:
+        // cargo test -p input-linux-tools test_device -- --nocapture
         println!("device {:?}", devices)
+    }
+
+    #[test]
+    fn test_debug() {
+        let mut d = Device {
+            path: PathBuf::from_str("/dev/input/mice").unwrap(),
+            device_type: DeviceType::Keyboard,
+            evdev: None,
+        };
+        assert_eq!(
+            format!("{:?}", d),
+            "Device unconnected { path: \"/dev/input/mice\", device_type: Keyboard }"
+        );
+        let mouse = Mouse::new(&d.path, false).unwrap();
+        d.evdev = Some(EvDev::Mouse(mouse));
+        assert_eq!(
+            format!("{:?}", d),
+            "Device connected { path: \"/dev/input/mice\", device_type: Keyboard }"
+        );
     }
 }

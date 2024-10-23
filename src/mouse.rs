@@ -67,8 +67,8 @@ pub struct MouseButtonInput {
 }
 
 pub struct Mouse {
-    evdev_handle: EvdevHandle<File>,
-    _buttons: HashMap<MouseButton, ButtonState>,
+    pub evdev_handle: EvdevHandle<File>,
+    pub _buttons: HashMap<MouseButton, ButtonState>,
 }
 
 #[derive(Debug)]
