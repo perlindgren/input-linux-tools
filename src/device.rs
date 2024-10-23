@@ -1,5 +1,6 @@
 //
 use crate::{keyboard::Keyboard, mouse::Mouse};
+use log::*;
 use serde::{Deserialize, Serialize};
 use std::{fmt, fs, path::PathBuf};
 
@@ -28,14 +29,18 @@ pub enum EvDev {
 
 impl Device {
     pub fn connect(&mut self) {
-        self.evdev = match self.device_type {
+        match self.device_type {
             DeviceType::Keyboard => {
-                Keyboard::new(&self.path, false).map_or_else(|_| None, |k| Some(EvDev::Keyboard(k)))
+                self.evdev = Keyboard::new(&self.path, false)
+                    .map_or_else(|_| None, |k| Some(EvDev::Keyboard(k)))
             }
             DeviceType::Mouse => {
-                Mouse::new(&self.path, false).map_or_else(|_| None, |m| Some(EvDev::Mouse(m)))
+                self.evdev =
+                    Mouse::new(&self.path, false).map_or_else(|_| None, |m| Some(EvDev::Mouse(m)));
             }
-            DeviceType::GamePad => todo!(),
+            DeviceType::GamePad => {
+                debug!("not yet implemented");
+            }
         }
     }
 }
