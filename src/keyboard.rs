@@ -78,3 +78,15 @@ impl Keyboard {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use input_linux;
+    use winit::{keyboard::PhysicalKey, platform::scancode::PhysicalKeyExtScancode};
+    #[test]
+    fn test_winit() {
+        let linux_key = input_linux::Key::A;
+        let physical_key: PhysicalKey = PhysicalKey::from_scancode(linux_key.code() as u32);
+        println!("linux_key {:?}, physical_key {:?}", linux_key, physical_key);
+    }
+}

@@ -1,12 +1,12 @@
 // mouse, linux events
-use input_linux_tools::mouse::*;
+use input_linux_tools::gamepad::*;
 use std::{thread, time};
 
 fn main() {
-    let mouse = Mouse::new_first_match("event-mouse", false).unwrap();
+    let gamepad = GamePad::new_first_match("event-joystic", true).unwrap();
 
     loop {
-        if let Ok(e) = mouse.read_event() {
+        if let Some(e) = gamepad.read() {
             println!("e {:?}", e);
         } else {
             println!("-- sleep --");
