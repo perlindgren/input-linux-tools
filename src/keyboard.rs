@@ -2,7 +2,7 @@ use crate::{device::*, nonblock::open_evdev};
 use input_linux::{EvdevHandle, Event, Key, KeyEvent, KeyState};
 use std::{/*collections::HashMap,*/ fs::File, path::PathBuf};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum KeyStatus {
     Released,
     Pressed,
@@ -26,7 +26,7 @@ impl Keyboard {
         let evdev_handle = open_evdev(path, blocking)?;
         Ok(Keyboard {
             evdev_handle,
-            ignore_autorepeat: false,
+            ignore_autorepeat: true,
         })
     }
 
