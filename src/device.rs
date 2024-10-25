@@ -1,5 +1,5 @@
 //
-use crate::{keyboard::Keyboard, mouse::Mouse};
+use crate::{gamepad::GamePad, keyboard::Keyboard, mouse::Mouse};
 use log::*;
 use serde::{Deserialize, Serialize};
 use std::{fmt, fs, path::PathBuf};
@@ -17,14 +17,14 @@ pub enum DeviceType {
     #[default]
     Keyboard,
     Mouse,
-    GamePad, // TODO
+    GamePad,
 }
 
 #[derive()]
 pub enum EvDev {
     Keyboard(Keyboard),
     Mouse(Mouse),
-    GamePad, // TODO
+    GamePad(GamePad),
 }
 
 impl Device {
