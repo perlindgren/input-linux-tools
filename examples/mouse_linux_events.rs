@@ -3,7 +3,7 @@ use input_linux_tools::mouse::*;
 use std::{thread, time};
 
 fn main() {
-    let mouse = Mouse::new_first_match("event-mouse", false).unwrap();
+    let mouse = Mouse::new_first_match("event-mouse", true).unwrap();
 
     loop {
         if let Ok(e) = mouse.read_event() {

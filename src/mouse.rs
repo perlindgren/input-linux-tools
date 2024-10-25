@@ -1,6 +1,5 @@
-use crate::{common::*, device::*, nonblock::open_evdev};
+use crate::{device::*, nonblock::open_evdev};
 use input_linux::{EvdevHandle, Event, Key, KeyEvent, RelativeAxis, RelativeEvent};
-
 use std::{collections::HashMap, fs::File, path::PathBuf};
 
 #[derive(Debug)]
@@ -33,11 +32,6 @@ pub enum MouseScrollUnit {
 }
 
 #[derive(Debug)]
-pub struct MouseMotion {
-    pub delta: Vec2,
-}
-
-#[derive(Debug)]
 pub enum ButtonState {
     Pressed,
     Released,
@@ -63,7 +57,6 @@ impl ButtonState {
 pub struct MouseButtonInput {
     pub button: MouseButton,
     pub state: ButtonState,
-    // pub window: Entity,
 }
 
 pub struct Mouse {
@@ -73,9 +66,11 @@ pub struct Mouse {
 
 #[derive(Debug)]
 pub enum MouseEvent {
-    ButtonEvent(MouseButtonInput),
-    ScrollEvent,
-    MotionEvent(MouseMotion),
+    Button(MouseButtonInput),
+    Scroll,
+    MotionX(f32),
+    MotionY(f32),
+    Wheel(f32),
 }
 
 impl Mouse {
@@ -114,7 +109,7 @@ impl Mouse {
                     ..
                 })) => {
                     let button: MouseButton = key.into();
-                    return Some(MouseEvent::ButtonEvent(MouseButtonInput {
+                    return Some(MouseEvent::Button(MouseButtonInput {
                         button,
                         state: value.is_pressed().into(),
                     }));
@@ -125,25 +120,16 @@ impl Mouse {
                     value,
                     ..
                 })) => match axis {
-                    RelativeAxis::X => {
-                        return Some(MouseEvent::MotionEvent(MouseMotion {
-                            delta: Vec2 {
-                                x: value as f32,
-                                y: 0.0,
-                            },
-                        }));
+                    RelativeAxis::X => return Some(MouseEvent::MotionX(value as f32)),
+                    RelativeAxis::Y => return Some(MouseEvent::MotionY(value as f32)),
+                    RelativeAxis::Wheel => return Some(MouseEvent::Wheel(value as f32)),
+                    _ => {
+                        log::trace!("unexpeced axis {:?}, {:?}", axis, value); // skip this event and read next
                     }
-                    RelativeAxis::Y => {
-                        return Some(MouseEvent::MotionEvent(MouseMotion {
-                            delta: Vec2 {
-                                x: 0.0,
-                                y: value as f32,
-                            },
-                        }));
-                    }
-                    _ => log::error!("unexpeced axis"), // skip this event and read next
                 },
-                _ => {} // skip this event and read next
+                event => {
+                    log::trace!("skip event {:?}", event); // skip this event and read next
+                }
             }
         }
     }

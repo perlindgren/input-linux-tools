@@ -1,4 +1,4 @@
-// mouse, linux events
+// gamepad, events
 use input_linux_tools::gamepad::*;
 use std::{thread, time};
 

@@ -67,13 +67,15 @@ impl Keyboard {
                                 }
                             }
                             _ => {
-                                log::error!("unexpected value");
-                                continue; // skip this event and read next
+                                log::trace!("unexpeced keystate {:?}", value); // skip this event and read next
+                                continue;
                             }
                         },
                     });
                 }
-                _ => {} // skip this event and read next
+                event => {
+                    log::trace!("skip event {:?}", event); // skip this event and read next
+                }
             }
         }
     }

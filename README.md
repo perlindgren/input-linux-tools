@@ -25,7 +25,9 @@ for k in devices.gamepads {
     println!("{:?}", k);
 }
 ```
+
 Expected output, your milage might vary:
+
 ```shell
 Keyboards
 "/dev/input/by-id/usb-Kingston_Technology_Company_HyperX_Pulsefire_FPS_Pro-if01-event-kbd"
@@ -55,7 +57,7 @@ use input_linux_tools::mouse::*;
 use std::{thread, time};
 
 fn main() {
-    let mouse = Mouse::new_first_match("Pulsefire", false).unwrap();
+    let mouse = Mouse::new_first_match("Pulsefire", true).unwrap();
 
     loop {
         if let Some(e) = mouse.read() {
@@ -80,8 +82,8 @@ use input_linux_tools::keyboard::*;
 use std::{thread, time};
 
 fn main() {
-    let mut keyboard = Keyboard::new_first_match("Tenkeyless-event-kbd", false).unwrap();
-    keyboard.ignore_autorepeat = true;
+    // ignore autorepeat per default
+    let mut keyboard = Keyboard::new_first_match("Tenkeyless-event-kbd", true).unwrap();
 
     loop {
         if let Some(e) = keyboard.read() {
@@ -96,20 +98,41 @@ fn main() {
 
 ---
 
-## Gamepads
+## Gamepad
 
-While `evdev` supports gamepads (joysticks), this library currently provides no abstraction of gamepads. (Bevy already support multiple gamepad devices so there is no urgent need.)
+We also support gamepads (joysticks):
+
+```rust
+// gamepad, events
+use input_linux_tools::gamepad::*;
+use std::{thread, time};
+
+fn main() {
+    let gamepad = GamePad::new_first_match("event-joystick", true).unwrap();
+
+    loop {
+        if let Some(e) = gamepad.read() {
+            println!("e {:?}", e);
+        } else {
+            println!("-- sleep --");
+            thread::sleep(time::Duration::from_millis(10));
+        }
+    }
+}
+```
 
 ---
 
 ## Future work
 
 What's lacking:
+
 - The mouse implementation currently does not support scroll wheel. This should be fairly straightforwarde.
 - No abstraction on top of `evdev` keycode enumaration (which comprises > 700 key events). Adopting the Bevy key codes would likely be a better option.
 - As mentioned, gamepad support is not there yet.
 
 What could be done:
+
 - Kernel level time-stamping. This could be beneficial to precise timing in context of online gaming (and other cases where timing is crucial).
 - Cross platform support. The same api could potentially be shared among Linux, Windows and OSX platforms, providing per device event input cross relevant operating systems.
 - Stateful wrapper, potentially providing a drop in replacement to the corresponding Bevy input systems. Not sure how window focus should be established though.
